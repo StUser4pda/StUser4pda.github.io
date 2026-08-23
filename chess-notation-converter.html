@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Конвертер шахматной нотации: EN → RU</title>
+<style>
+  :root {
+    --board-dark: #3a3a34;
+    --board-light: #f0ead6;
+    --accent: #8a6d3b;
+    --accent-light: #b89860;
+    --paper: #faf7f0;
+    --ink: #232019;
+    --line: #d8d0bd;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      linear-gradient(180deg, var(--board-dark) 0%, var(--board-dark) 220px, var(--paper) 220px, var(--paper) 100%);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    color: var(--ink);
+    padding: 0 0 60px;
+  }
+
+  header {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 48px 24px 24px;
+    color: var(--board-light);
+  }
+
+  header .eyebrow {
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.18em;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: var(--accent-light);
+    margin: 0 0 10px;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 40px);
+    font-weight: 400;
+    line-height: 1.15;
+  }
+
+  header p {
+    max-width: 560px;
+    color: #cfc9b8;
+    font-size: 15px;
+    line-height: 1.5;
+    margin-top: 12px;
+  }
+
+  main {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .panel {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    box-shadow: 0 20px 40px -25px rgba(0,0,0,0.35);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  @media (max-width: 720px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .col {
+    padding: 22px 24px;
+  }
+
+  .col + .col {
+    border-left: 1px solid var(--line);
+  }
+
+  @media (max-width: 720px) {
+    .col + .col { border-left: none; border-top: 1px solid var(--line); }
+  }
+
+  .col label {
+    display: block;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 340px;
+    resize: vertical;
+    font-family: 'Courier New', Consolas, monospace;
+    font-size: 13.5px;
+    line-height: 1.55;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    background: #fdfcf9;
+    color: var(--ink);
+  }
+
+  textarea:focus {
+    outline: 2px solid var(--accent-light);
+    outline-offset: 1px;
+  }
+
+  #output {
+    background: #fbf9f4;
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--line);
+    flex-wrap: wrap;
+  }
+
+  .actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    padding: 9px 18px;
+    border-radius: 2px;
+    cursor: pointer;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  button:hover { background: var(--accent); color: #fff; }
+
+  button.primary {
+    background: var(--accent);
+    color: #fff;
+  }
+  button.primary:hover { background: #6f5729; border-color: #6f5729; }
+
+  .status {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #7a7364;
+    min-height: 16px;
+  }
+
+  .legend {
+    margin-top: 28px;
+    padding-top: 22px;
+  }
+
+  .legend h2 {
+    font-size: 14px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 12px;
+    font-weight: normal;
+  }
+
+  table.legend-table {
+    border-collapse: collapse;
+    font-size: 14px;
+    width: 100%;
+  }
+
+  table.legend-table th, table.legend-table td {
+    text-align: left;
+    padding: 6px 14px 6px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  table.legend-table th {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7a7364;
+    font-weight: normal;
+  }
+
+  .note {
+    font-size: 13px;
+    color: #6b6558;
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+
+  footer {
+    max-width: 880px;
+    margin: 32px auto 0;
+    padding: 0 24px;
+    font-size: 12px;
+    color: #9a9483;
+    font-family: 'Courier New', monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">PGN · EN → RU</p>
+  <h1>Конвертер шахматной нотации</h1>
+  <p>Вставьте партию в английской нотации (K, Q, R, B, N) — получите русскую (Кр, Ф, Л, С, К). Координаты полей, символы взятия, шаха и результата не меняются.</p>
+</header>
+
+<main>
+  <div class="panel">
+    <div class="grid">
+      <div class="col">
+        <label for="input">Английская нотация</label>
+        <textarea id="input" placeholder="1.e4 e5 2.Nf3 Nc6 3.Bb5 a6 4.Ba4 Nf6 ..."></textarea>
+      </div>
+      <div class="col">
+        <label for="output">Русская нотация</label>
+        <textarea id="output" readonly placeholder="Результат появится здесь"></textarea>
+      </div>
+    </div>
+    <div class="toolbar">
+      <div class="actions">
+        <button class="primary" onclick="convert()">Конвертировать →</button>
+        <button onclick="copyOutput()">Копировать результат</button>
+        <button onclick="clearAll()">Очистить</button>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2>Таблица соответствия</h2>
+    <table class="legend-table">
+      <tr><th>Англ.</th><th>Рус.</th><th>Фигура</th></tr>
+      <tr><td>K</td><td>Кр</td><td>Король</td></tr>
+      <tr><td>Q</td><td>Ф</td><td>Ферзь</td></tr>
+      <tr><td>R</td><td>Л</td><td>Ладья</td></tr>
+      <tr><td>B</td><td>С</td><td>Слон</td></tr>
+      <tr><td>N</td><td>К</td><td>Конь</td></tr>
+    </table>
+    <p class="note">
+      Конвертер не трогает названия файлов и полей (a–h), заголовки PGN-тегов в квадратных скобках [ ] и текст в фигурных скобках { } — то есть комментарии остаются как есть. Буквы фигур заменяются только там, где они стоят на месте хода (в начале хода или сразу после номера / открывающей скобки варианта / символа взятия «x»), чтобы не задеть случайные совпадения букв в комментариях или тегах.
+    </p>
+  </div>
+</main>
+
+<footer>notation-converter.html — работает полностью в браузере, ничего никуда не отправляется</footer>
+
+<script>
+function convertPgnToRussian(pgn) {
+  const map = { K: 'Кр', Q: 'Ф', R: 'Л', B: 'С', N: 'К' };
+
+  // Разбиваем текст на "защищённые" куски (теги [...] и комментарии {...})
+  // и "конвертируемые" куски (собственно ходы), чтобы не трогать буквы фигур
+  // внутри тегов PGN и текстовых комментариев.
+  const protectedRegex = /(\[[^\]]*\]|\{[^}]*\})/g;
+
+  const parts = pgn.split(protectedRegex);
+
+  const convertedParts = parts.map((part, i) => {
+    // Чётные индексы после split с capturing group — обычный текст (ходы),
+    // нечётные — защищённые куски (теги/комментарии), их не трогаем.
+    if (protectedRegex.test(part)) {
+      protectedRegex.lastIndex = 0;
+      return part;
+    }
+    protectedRegex.lastIndex = 0;
+
+    // В "ходовой" части заменяем буквы фигур на русские аналоги.
+    // Ищем букву фигуры, стоящую перед координатой поля или перед 'x',
+    // либо в контексте превращения пешки (=Q, =R, =B, =N).
+    let text = part;
+
+    // Превращение пешки: =Q, =R, =B, =N
+    text = text.replace(/=([KQRBN])/g, (m, p1) => '=' + map[p1]);
+
+    // Обычный ход фигуры: буква фигуры перед (опционально буквой/цифрой уточнения,
+    // затем) 'x' или координатой поля a-h1-8
+    text = text.replace(/\b([KQRBN])(?=[a-h1-8x])/g, (m, p1) => map[p1]);
+
+    return text;
+  });
+
+  return convertedParts.join('');
+}
+
+function convert() {
+  const input = document.getElementById('input').value;
+  const status = document.getElementById('status');
+  if (!input.trim()) {
+    status.textContent = 'Вставьте текст партии слева.';
+    return;
+  }
+  const result = convertPgnToRussian(input);
+  document.getElementById('output').value = result;
+  status.textContent = 'Готово.';
+}
+
+function copyOutput() {
+  const output = document.getElementById('output');
+  const status = document.getElementById('status');
+  if (!output.value.trim()) {
+    status.textContent = 'Нечего копировать — сначала конвертируйте.';
+    return;
+  }
+  output.select();
+  navigator.clipboard.writeText(output.value).then(() => {
+    status.textContent = 'Скопировано в буфер обмена.';
+  }).catch(() => {
+    status.textContent = 'Не удалось скопировать автоматически, выделите текст вручную.';
+  });
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').value = '';
+  document.getElementById('status').textContent = '';
+}
+</script>
+
+</body>
+</html>
